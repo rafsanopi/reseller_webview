@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class WebScreen extends StatefulWidget {
   const WebScreen({super.key});
@@ -43,7 +43,9 @@ class _WebScreenState extends State<WebScreen> {
                   final String extension =
                       _getFileExtensionFromMimeType(mimeType);
                   await _saveBase64File(
-                      base64Content, DateTime.now().toString(), extension);
+                      base64Content,
+                      "${DateTime.now().year}-${DateTime.now().hour}-${DateTime.now().minute}-${DateTime.now().second}",
+                      extension);
                 }
               },
             );
@@ -74,20 +76,28 @@ class _WebScreenState extends State<WebScreen> {
 
   Future<void> _saveBase64File(
       String base64Content, String fileName, String fileExtension) async {
+    if (await Permission.manageExternalStorage.isGranted ||
+        (await Permission.storage.isGranted &&
+            await Permission.mediaLibrary.isGranted)) {
+      debugPrint("All permissions granted");
+    } else {
+      debugPrint("Requesting permissions");
+      await Permission.manageExternalStorage.request();
+      await Permission.storage.request();
+      await Permission.mediaLibrary.request();
+    }
     try {
       final decodedBytes = base64Decode(base64Content.replaceAll('\n', ''));
-      final directory = await getExternalStorageDirectory();
-      if (directory != null) {
-        final filePath = "${directory.path}/$fileName.$fileExtension";
-        final file = File(filePath);
-        await file.writeAsBytes(decodedBytes);
-        debugPrint("File saved at: $filePath");
-        await OpenFile.open(filePath);
-      } else {
-        debugPrint("External storage directory not available.");
-      }
+      final directory = Directory('/storage/emulated/0/Download');
+      final filePath = "${directory.path}/$fileName.$fileExtension";
+      final file = File(filePath);
+      await file.writeAsBytes(decodedBytes);
+      await ImageGallerySaverPlus.saveImage(decodedBytes);
+      //await OpenFile.open(filePath);
+      debugPrint("File saved at: $filePath");
     } catch (e) {
       debugPrint("Error saving file: $e");
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save file: $e')),
       );

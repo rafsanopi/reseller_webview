@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.example.reseller_webview.app-mergeDebugResources-43:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "/home/rafsan/.gradle/caches/transforms-3/7a215b6970ed8fe8a357865eacb11cce/transformed/appcompat-1.6.1/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    }
+                }
+            ]
+        }
+    ]
+}
