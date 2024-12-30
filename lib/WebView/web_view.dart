@@ -6,6 +6,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:reseller_webview/WebView/back_pressed.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WebScreen extends StatefulWidget {
   const WebScreen({super.key});
@@ -35,12 +36,28 @@ class _WebScreenState extends State<WebScreen> {
       child: Scaffold(
         body: SafeArea(
           child: InAppWebView(
+            shouldOverrideUrlLoading: (controller, navigationAction) async {
+              final uri = navigationAction.request.url!;
+
+              // Check if the URL should be opened externally or handled within the WebView
+              if (uri.scheme == 'http' || uri.scheme == 'https') {
+                // Allow the WebView to load the URL
+                return NavigationActionPolicy.ALLOW;
+              } else {
+                // For non-http/https URLs, try launching them externally
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } else {
+                  debugPrint('Could not launch $uri');
+                }
+                return NavigationActionPolicy.CANCEL;
+              }
+            },
             initialUrlRequest: URLRequest(
               // mainDocumentURL: WebUri(source),
               url: WebUri("https://confidenceresellerbd.com/reseller/home"),
             ),
             initialSettings: InAppWebViewSettings(
-              cacheEnabled: false,
               javaScriptEnabled: true,
               allowFileAccess: true,
               useOnDownloadStart: true,
