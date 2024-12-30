@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:reseller_webview/WebView/back_pressed.dart';
 
 class WebScreen extends StatefulWidget {
   const WebScreen({super.key});
@@ -15,56 +16,71 @@ class WebScreen extends StatefulWidget {
 
 class _WebScreenState extends State<WebScreen> {
   late InAppWebViewController _webViewController;
+  final BackPressed _backPressed = BackPressed();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: InAppWebView(
-          initialUrlRequest: URLRequest(
-            url: WebUri(
-                "https://confidenceresellerbd.com/reseller/passive-revenue"),
-          ),
-          initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            allowFileAccess: true,
-            useOnDownloadStart: true,
-          ),
-          onWebViewCreated: (controller) {
-            _webViewController = controller;
+    return WillPopScope(
+      //canPop: true,
+      onWillPop: () async {
+        //If website can go back page
+        if (await _webViewController.canGoBack()) {
+          await _webViewController.goBack();
+          return false;
+        } else {
+          //Double pressed to exit app
+          return _backPressed.exit(context);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: InAppWebView(
+            initialUrlRequest: URLRequest(
+              // mainDocumentURL: WebUri(source),
+              url: WebUri("https://confidenceresellerbd.com/reseller/home"),
+            ),
+            initialSettings: InAppWebViewSettings(
+              cacheEnabled: false,
+              javaScriptEnabled: true,
+              allowFileAccess: true,
+              useOnDownloadStart: true,
+            ),
+            onWebViewCreated: (controller) {
+              _webViewController = controller;
 
-            // Adding JavaScript handler for blob to Base64 conversion
-            _webViewController.addJavaScriptHandler(
-              handlerName: "blobToBase64",
-              callback: (data) async {
-                if (data.isNotEmpty && data.length >= 2) {
-                  final String base64Content = data[0];
-                  final String mimeType = data[1];
-                  final String extension =
-                      _getFileExtensionFromMimeType(mimeType);
-                  await _saveBase64File(
-                      base64Content,
-                      "${DateTime.now().year}-${DateTime.now().hour}-${DateTime.now().minute}-${DateTime.now().second}",
-                      extension);
-                }
-              },
-            );
-          },
-          onDownloadStartRequest: (controller, url) async {
-            debugPrint("Download started: ${url.url}");
-
-            // Injecting JavaScript to convert blob to Base64
-            try {
-              var jsContent =
-                  await rootBundle.loadString('assets/js/base64.js');
-              await _webViewController.evaluateJavascript(
-                source: jsContent.replaceAll(
-                    "blobUrlPlaceholder", url.url.toString()),
+              // Adding JavaScript handler for blob to Base64 conversion
+              _webViewController.addJavaScriptHandler(
+                handlerName: "blobToBase64",
+                callback: (data) async {
+                  if (data.isNotEmpty && data.length >= 2) {
+                    final String base64Content = data[0];
+                    final String mimeType = data[1];
+                    final String extension =
+                        _getFileExtensionFromMimeType(mimeType);
+                    await _saveBase64File(
+                        base64Content,
+                        "${DateTime.now().year}-${DateTime.now().hour}-${DateTime.now().minute}-${DateTime.now().second}",
+                        extension);
+                  }
+                },
               );
-            } catch (e) {
-              debugPrint("Error injecting JavaScript: $e");
-            }
-          },
+            },
+            onDownloadStartRequest: (controller, url) async {
+              debugPrint("Download started: ${url.url}");
+
+              // Injecting JavaScript to convert blob to Base64
+              try {
+                var jsContent =
+                    await rootBundle.loadString('assets/js/base64.js');
+                await _webViewController.evaluateJavascript(
+                  source: jsContent.replaceAll(
+                      "blobUrlPlaceholder", url.url.toString()),
+                );
+              } catch (e) {
+                debugPrint("Error injecting JavaScript: $e");
+              }
+            },
+          ),
         ),
       ),
     );
