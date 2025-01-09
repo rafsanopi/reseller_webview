@@ -58,10 +58,12 @@ class _WebScreenState extends State<WebScreen> {
               url: WebUri("https://confidenceresellerbd.com/reseller/home"),
             ),
             initialSettings: InAppWebViewSettings(
-              javaScriptEnabled: true,
-              allowFileAccess: true,
-              useOnDownloadStart: true,
-            ),
+                javaScriptEnabled: true,
+                allowFileAccess: true,
+                useOnDownloadStart: true,
+                builtInZoomControls: false,
+                pageZoom: .0,
+                supportZoom: false),
             onWebViewCreated: (controller) {
               _webViewController = controller;
 
